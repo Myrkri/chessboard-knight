@@ -1,69 +1,78 @@
 package Main;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Scanner;
+import java.util.Set;
 
 public class Main {
+
+    private static final Character[] CHESS_LETTER_BOARD = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
+    private static final Character[] CHESS_NUMBER_BOARD = {'1', '2', '3', '4', '5', '6', '7', '8'};
+
+
     public static void main(String[] args) throws Exception {
+        System.out.println("Please provide start point, format e.g. A1:");
         final Scanner scanner = new Scanner(System.in);
         final String startPoint = scanner.nextLine();
+        System.out.println("Please provide end point, format e.g. A1:");
         final String endPoint = scanner.nextLine();
-        final Character[] chessLetterBoard = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
-        final Character[] chessNumberBoard = {'1', '2', '3', '4', '5', '6', '7', '8'};
 
-        validateInput(startPoint, endPoint, chessLetterBoard, chessNumberBoard);
+        validateInput(startPoint);
+        validateInput(endPoint);
 
         final Set<String> possibleSteps = new LinkedHashSet<>();
         possibleSteps.add(startPoint);
 
         int counter = 0;
-        final int maxIterations = 500;
-        while (true) {
-            if (possibleSteps.contains(endPoint)) {
-                System.out.println("Minimum steps: " + counter);
-                break;
-            }
-            iterateOverEachPossibleStep(chessLetterBoard, possibleSteps);
-            counter++;
+        countSteps(endPoint, possibleSteps, counter);
+    }
 
-            if (counter >= maxIterations) {
-                System.out.println("Max iterations reached");
-                break;
-            }
+    private static void countSteps(String endPoint, Set<String> possibleSteps, int counter) {
+        if (possibleSteps.contains(endPoint)) {
+            System.out.println("Minimum steps: " + counter);
+            return;
+        }
+        iterateOverEachPossibleStep(possibleSteps);
+        counter++;
+        countSteps(endPoint, possibleSteps, counter);
+    }
+
+    private static void validateInput(final String input) throws Exception {
+        if (!Arrays.asList(CHESS_LETTER_BOARD).contains(input.charAt(0)) ||
+                !Arrays.asList(CHESS_NUMBER_BOARD).contains(input.charAt(1)) ||
+                Character.isLowerCase(input.charAt(0))) {
+            throw new Exception("Invalid input");
         }
     }
 
-    private static void validateInput(String startPoint, String endPoint, Character[] chessLetterBoard, Character[] chessNumberBoard) throws Exception {
-        if (Arrays.stream(chessLetterBoard).noneMatch(c -> c.equals(startPoint.charAt(0)))
-                || Arrays.stream(chessNumberBoard).noneMatch(c -> c.equals(startPoint.charAt(1))) ||
-                Character.isLowerCase(startPoint.charAt(0))) {
-            throw new Exception("Invalid start point");
-        }
-        if (Arrays.stream(chessLetterBoard).noneMatch(c -> c.equals(endPoint.charAt(0)))
-                || Arrays.stream(chessNumberBoard).noneMatch(c -> c.equals(endPoint.charAt(1))) ||
-                Character.isLowerCase(endPoint.charAt(0))) {
-            throw new Exception("Invalid end point");
-        }
-    }
-
-    private static void iterateOverEachPossibleStep(Character[] chessLetterBoard, Set<String> steps) {
+    private static void iterateOverEachPossibleStep(Set<String> steps) {
         for (String point : steps.stream().toList()) {
-            for (int i = 0; i < chessLetterBoard.length; i++) {
-                if (i + 1 >= chessLetterBoard.length) {
-                    break;
-                }
-                if (chessLetterBoard[i] + 1 == point.charAt(0) || chessLetterBoard[i] - 1 == point.charAt(0)) {
-                    if (i - 2 > 0) {
-                        steps.add(formatResult(chessLetterBoard[i], (char) (point.charAt(1) - 2)));
+            char letter = point.charAt(0);
+            char number = point.charAt(1);
+
+            makeStepByLetterAndNumber(steps, letter, number);
+        }
+    }
+
+    private static void makeStepByLetterAndNumber(Set<String> steps, char letter, char number) {
+        for (int letterStep = -2; letterStep <= 2; letterStep++) {
+            char possibleLetter = (char) (letter + letterStep);
+            for (int numberStep = -2; numberStep <= 2; numberStep++) {
+                if (Math.abs(letterStep) + Math.abs(numberStep) == 3) {
+                    char possibleNumber = (char) (number + numberStep);
+
+                    if (isValidChessPosition(possibleLetter, possibleNumber)) {
+                        steps.add(formatResult(possibleLetter, possibleNumber));
                     }
-                    steps.add(formatResult(chessLetterBoard[i], (char) (point.charAt(1) + 2)));
-                } else if (chessLetterBoard[i] + 2 == point.charAt(0) || chessLetterBoard[i] - 2 == point.charAt(0)) {
-                    if (i - 1 > 0) {
-                        steps.add(formatResult(chessLetterBoard[i], (char) (point.charAt(1) - 1)));
-                    }
-                    steps.add(formatResult(chessLetterBoard[i], (char) (point.charAt(1) + 1)));
                 }
             }
         }
+    }
+
+    private static boolean isValidChessPosition(char letter, char number) {
+        return Arrays.asList(CHESS_LETTER_BOARD).contains(letter) &&
+                Arrays.asList(CHESS_NUMBER_BOARD).contains(number);
     }
 
     private static String formatResult(Character character, Character number) {
